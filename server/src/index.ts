@@ -1,6 +1,12 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 
+type Task = {
+  id: number;
+  text: string;
+  done: boolean;
+};
+
 // A schema is a collection of type definitions (hence "typeDefs")
 // that together define the "shape" of queries that are executed against
 // your data.
@@ -8,7 +14,7 @@ const typeDefs = `#graphql
   # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
 
   type Task {
-    id: Int
+    id: ID!
     text: String
     done: Boolean
   }
@@ -21,7 +27,14 @@ const typeDefs = `#graphql
   }
 
   type Mutation {
-    addTask(id: Int, text: String, done: Boolean): Task
+    addTask(text: String): AddTaskResponse
+  }
+
+  type AddTaskResponse {
+    code: Int!
+    success: Boolean!
+    message: String!
+    task: Task
   }
 `;
 
@@ -38,14 +51,34 @@ const tasks = [
   },
 ];
 
+function createId(tasks: Task[]): number {
+  return tasks.length ? tasks[tasks.length - 1].id + 1 : 1;
+}
+
 const resolvers = {
   Query: {
     tasks: () => tasks,
   },
   Mutation: {
-    addTask: (id, text, done) => {
-      tasks.push({ id, text, done });
-      return { id, text, done };
+    addTask: (_, { text }) => {
+      const id = createId(tasks);
+      console.log(id, text);
+      try {
+        tasks.push({ id, text, done: false });
+        return {
+          code: 200,
+          success: true,
+          message: 'Task added',
+          task: { id, text, done: false },
+        };
+      } catch (err) {
+        return {
+          code: err.extensions.response.status,
+          success: false,
+          message: err.extensions.response.body,
+          task: null,
+        };
+      }
     },
   },
 };

@@ -16,7 +16,7 @@ export default function TodoItem({ item }: { item: Task }) {
     dispatch(updateTask(item));
   }
 
-  const labelId = `checkbox-list-label-${item}`;
+  const labelId = `checkbox-list-label-${item.id}`;
 
   function handleDelete(item: Task) {
     dispatch(deleteTask(item));
@@ -45,6 +45,7 @@ export default function TodoItem({ item }: { item: Task }) {
       >
         <ListItemIcon>
           <Checkbox
+            name="done"
             edge="start"
             checked={item.done}
             tabIndex={-1}

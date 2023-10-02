@@ -18,7 +18,6 @@ export const tasksSlice = createSlice({
       state.tasks.push(action.payload);
     },
     updateTask: (state, action) => {
-      console.log(action.payload);
       state.tasks = state.tasks.map((task) => {
         if (task.id === action.payload.id) {
           task.done = !task.done;
@@ -29,8 +28,11 @@ export const tasksSlice = createSlice({
     deleteTask: (state, action) => {
       state.tasks = state.tasks.filter((task) => task.id !== action.payload.id);
     },
+    loadTasks: (state, action) => {
+      state.tasks = action.payload;
+    },
   },
 });
 
-export const { addTask, updateTask, deleteTask } = tasksSlice.actions;
+export const { addTask, updateTask, deleteTask, loadTasks } = tasksSlice.actions;
 export default tasksSlice.reducer;

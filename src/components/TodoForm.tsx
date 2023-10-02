@@ -7,18 +7,39 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addTask } from '../slices/taskSlice';
 import { Task } from '../lib/types';
 import { RootState } from '../store';
+import { gql, useMutation } from '@apollo/client';
 
-function createId(tasks: Task[]): number {
-  return tasks.length ? tasks[tasks.length - 1].id + 1 : 1;
-}
+const ADD_TASK = gql`
+  mutation AddTask($text: String) {
+    addTask(text: $text) {
+      code
+      success
+      message
+      task {
+        id
+        text
+        done
+      }
+    }
+  }
+`;
 
 export default function TodoForm() {
   const { t } = useTranslation();
   const [task, setTask] = useState('');
-
   const tasks = useSelector((state: RootState) => state.tasks.tasks);
-
   const dispatch = useDispatch();
+  const [addNewTask] = useMutation(ADD_TASK, {
+    onCompleted: (data) => {
+      dispatch(
+        addTask({
+          id: data.addTask.task.id,
+          text: data.addTask.task.text,
+          done: data.addTask.task.done,
+        }),
+      );
+    },
+  });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,7 +49,11 @@ export default function TodoForm() {
     };
 
     if (target.task.value) {
-      dispatch(addTask({ id: createId(tasks), text: target.task.value, done: false }));
+      addNewTask({
+        variables: {
+          text: target.task.value,
+        },
+      });
     }
 
     setTask('');
@@ -57,7 +82,13 @@ export default function TodoForm() {
         value={task}
         onChange={handleChange}
       />
-      <Button type="submit" variant="outlined" size="small" sx={{ verticalAlign: 'bottom' }}>
+      <Button
+        type="submit"
+        id="submit"
+        variant="outlined"
+        size="small"
+        sx={{ verticalAlign: 'bottom' }}
+      >
         {t('buttonLabel')}
       </Button>
     </Box>
