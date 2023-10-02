@@ -27,10 +27,12 @@ const typeDefs = `#graphql
   }
 
   type Mutation {
-    addTask(text: String): AddTaskResponse
+    addTask(text: String): ActionTaskResponse,
+    updateTask(id: ID!): ActionTaskResponse,
+    deleteTask(id: ID!): ActionTaskResponse
   }
 
-  type AddTaskResponse {
+  type ActionTaskResponse {
     code: Int!
     success: Boolean!
     message: String!
@@ -38,18 +40,7 @@ const typeDefs = `#graphql
   }
 `;
 
-const tasks = [
-  {
-    id: 1,
-    text: 'read a book',
-    done: false,
-  },
-  {
-    id: 2,
-    text: 'do some coding',
-    done: true,
-  },
-];
+let tasks = [];
 
 function createId(tasks: Task[]): number {
   return tasks.length ? tasks[tasks.length - 1].id + 1 : 1;
@@ -62,7 +53,6 @@ const resolvers = {
   Mutation: {
     addTask: (_, { text }) => {
       const id = createId(tasks);
-      console.log(id, text);
       try {
         tasks.push({ id, text, done: false });
         return {
@@ -70,6 +60,52 @@ const resolvers = {
           success: true,
           message: 'Task added',
           task: { id, text, done: false },
+        };
+      } catch (err) {
+        return {
+          code: err.extensions.response.status,
+          success: false,
+          message: err.extensions.response.body,
+          task: null,
+        };
+      }
+    },
+    updateTask: (_, { id }) => {
+      try {
+        let updatedTask: Task;
+        tasks = tasks.map((task) => {
+          if (task.id === Number(id)) {
+            task.done = !task.done;
+            updatedTask = task;
+          }
+          return task;
+        });
+        updatedTask = tasks.find((task) => task.id === Number(id));
+        return {
+          code: 200,
+          success: true,
+          message: `Task ${updatedTask.text} updated`,
+          task: updatedTask,
+        };
+      } catch (err) {
+        return {
+          code: err.extensions.response.status,
+          success: false,
+          message: err.extensions.response.body,
+          task: null,
+        };
+      }
+    },
+    deleteTask: (_, { id }) => {
+      const deletedTask = tasks.find((task) => task.id === Number(id));
+      try {
+        tasks = tasks.filter((task) => task.id !== Number(id));
+
+        return {
+          code: 200,
+          success: true,
+          message: `Task ${deletedTask.text} deleted`,
+          task: deletedTask,
         };
       } catch (err) {
         return {

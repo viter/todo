@@ -8,18 +8,72 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import { Task } from '../lib/types';
 import { useDispatch } from 'react-redux';
 import { deleteTask, updateTask } from '../slices/taskSlice';
+import { gql, useMutation } from '@apollo/client';
+
+const UPDATE_TASK = gql`
+  mutation UpdateTask($updateTaskId: ID!) {
+    updateTask(id: $updateTaskId) {
+      code
+      success
+      message
+      task {
+        id
+        text
+        done
+      }
+    }
+  }
+`;
+const DELETE_TASK = gql`
+  mutation DeleteTask($deleteTaskId: ID!) {
+    deleteTask(id: $deleteTaskId) {
+      code
+      success
+      message
+      task {
+        id
+        text
+        done
+      }
+    }
+  }
+`;
 
 export default function TodoItem({ item }: { item: Task }) {
+  const [toggleDoneTask] = useMutation(UPDATE_TASK, {
+    onCompleted: (data) => {
+      dispatch(updateTask(data.updateTask.task));
+    },
+  });
+
+  const [removeTask] = useMutation(DELETE_TASK, {
+    onCompleted: (data) => {
+      dispatch(deleteTask(data.deleteTask.task));
+    },
+  });
+
   const dispatch = useDispatch();
 
   function handleUpdate(item: Task) {
-    dispatch(updateTask(item));
+    if (item.id) {
+      toggleDoneTask({
+        variables: {
+          updateTaskId: item.id,
+        },
+      });
+    }
   }
 
   const labelId = `checkbox-list-label-${item.id}`;
 
   function handleDelete(item: Task) {
-    dispatch(deleteTask(item));
+    if (item.id) {
+      removeTask({
+        variables: {
+          deleteTaskId: item.id,
+        },
+      });
+    }
   }
 
   const textDecoration = item.done ? 'line-through' : 'none';
